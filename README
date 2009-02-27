@@ -1,0 +1,125 @@
+/**
+* jQuery.themeScript - $(document).ready startup function theming
+* Written by Brant Burnett (http://www.btburnett.com/).
+* Licensed under the GPL (http://www.gnu.org/licenses/gpl.html).
+* Date: 2009/02/02
+*
+* @author Brant Burnett
+* @version 1.0.0
+*
+**/
+
+For better or for worse, a significant amount of the look and feel of our web sites
+is now being controlled through Javascript.  There's simply so much we can do with
+Javascript, especially jQuery and it's plugins, that can't be done with CSS.  This
+causes a potential problem when dealing with subthemes.  Often times we want to create
+a common theme, but then allow subthemes to override certain functionality.  With CSS
+this is easy, but with Javascript it's more difficult.  That's where jQuery.themeScript
+comes in.
+
+jQuery.themeScript allows you to register collections of functions against specific
+CSS selectors or specific names.  A subtheme can then add to or replace these functions
+via their CSS selector or name.  These functions are called during $(document).ready
+in the order that they are specified in the collection.
+
+Function Collections
+---------------------
+
+You access a function collection by calling $.themeScript(sel) (or jQuery.themeScript(sel)).
+sel can be either a standard jQuery CSS selector, or can be a custom string beginning with
+a dash (-).  Depending on which type of string it is, it will be handled differently when the
+functions in the collection are called.
+
+The object that is returned works much like a jQuery object, allowing you to make modifications
+and chain calls together.  Here are the functions supplied:
+
+size() - returns the number of functions in the collection
+
+get( [index] ) - With no parameters returns an array made from the collection.  With parameters
+	returns the item that index.  i.e. get(0) returns the first item.
+				 
+each( callback, [args] ) - iterates through the collection like jQuery.each
+
+exec() - executes the functions in the collection in order
+
+add( callback, [index] ) - adds a function to the collection.  index is the zero-based index to
+	insert the function before.  index can also be the name of the function to insert the callback
+	before.  By default it will add the function to the end of the array.  callback can also be
+	an array of functions to insert.
+	
+clear() - removes all functions from the collection
+
+remove( index, [count] ) - removes a function from the collection.  index can be either the string
+	name of the function to remove, or the zero-based index of the function to remove.  If using
+	an index then you can also specify the number of items to remove using count.
+	
+index( funcName ) - returns the zero-based index of a function in the collection based upon
+	it's name.  Returns -1 if the function is not found.
+	
+Global Functions
+-----------------
+
+$.themeScript( sel ) - Retrieves a function collection based upon a selector
+
+$.themeScript.clear() - removes all theming collections
+
+$.themeScript.exec() - executes all theme registered themeScript collections
+
+$.themeScript.extend - extend the themeScript library, like $.extend
+
+$.themeScript.fn.extend - extend the themeScript collection functions, like $.fn.extend
+
+$.themeScript.bind() - binds $.themeScript.exec to $(document).ready.  This is done by default
+	during the plugin load process.
+
+$.themeScript.unbind() - unbinds $.themeScript.exec from $(document).ready
+
+Function Parameters
+--------------------
+
+The callback functions you add to a themeScript collection have two possible formats, depending
+on what type of selector was used to create the collection.  The second parameter is always
+the jQuery object, in case you need it to avoid namespace conflicts.
+
+If the selector was a jQuery CSS selector, then the first parameter is a jQuery object made
+by using that selector.  Therefore, if you use:
+
+	$.themeScript(".my-class").add( function( $s, $ ) {...} );
+
+$s will be the result of $(".my-class").  Note that if the jQuery selector returns an empty
+jQuery object (there are no results), the callback functions are never even called.  This is
+to help improve performance.
+
+If the selector was a custom string beginning with a dash (-) character, then the first parameter
+is instead the selector string itself.  Therefore if you use:
+
+	$.themeScript("-my-theme").add( function( s, $ ) {...} );
+	
+s will be "-my-theme".  These functions will always be called during exec, and never skipped.
+
+Example Usage
+--------------
+
+In main theme, hide all DIVs with the my-class class name.
+
+	$.themeScript("div.my-class").add( function( $s ) { $s.hide(); } );
+	
+Override in sub theme, instead setting the background color to white:
+
+	$.themeScript("div.my-class").clear().add( function ( $s ) { $s.css("background-color", "#fff"); } );
+	
+Or insert something else before it:
+
+	$.themeScript("div.my-class").add( function( $s ) { $s.parent().appendTo("body"); }, 0);
+
+Function Naming
+----------------
+
+You have the ability to access a function in themeScript collection by using the function's name.
+While function names are not required, you can provide them as follows:
+
+	$.themeScript(".my-class").add( [ function doSomething( $s, $ ) {...}, function doSomethingElse ( $s, $ ) {...} ] );
+
+And then replace it later in a subtheme by adding before it and then removing it:
+
+	$.themeScript(".my-class").add( function doSomethingHere( $s, $ ) {...}, "doSomething" ).remove("doSomething");
