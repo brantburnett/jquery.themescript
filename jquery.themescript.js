@@ -1,13 +1,12 @@
 /**
-* jQuery.themeScript - $(document).ready startup function theming
-* Written by Brant Burnett (http://www.btburnett.com/).
+* @license jQuery.themeScript - $(document).ready startup function theming
+* Copyright (c) 2009-2010 Brant Burnett (http://www.btburnett.com/).
 * Licensed under the GPL (http://www.gnu.org/licenses/gpl.html).
-* Date: 2009/02/02
 *
-* @author Brant Burnett
-* @version 1.0.0
-*
-**/
+* Date:		2010/01/28
+* Author:	Brant Burnett
+* Version:	1.0.1
+*/
 
 (function($) {
     var keys = {};
@@ -143,6 +142,4 @@
         }
         return this;
     }
-
-    ts.bind();
 })(jQuery);

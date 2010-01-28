@@ -2,10 +2,10 @@
 * jQuery.themeScript - $(document).ready startup function theming
 * Written by Brant Burnett (http://www.btburnett.com/).
 * Licensed under the GPL (http://www.gnu.org/licenses/gpl.html).
-* Date: 2009/02/02
+* Date: 2010/01/28
 *
 * @author Brant Burnett
-* @version 1.0.0
+* @version 1.0.1
 *
 **/
 
@@ -69,8 +69,7 @@ $.themeScript.extend - extend the themeScript library, like $.extend
 
 $.themeScript.fn.extend - extend the themeScript collection functions, like $.fn.extend
 
-$.themeScript.bind() - binds $.themeScript.exec to $(document).ready.  This is done by default
-	during the plugin load process.
+$.themeScript.bind() - binds $.themeScript.exec to $(document).ready.
 
 $.themeScript.unbind() - unbinds $.themeScript.exec from $(document).ready
 
@@ -123,3 +122,14 @@ While function names are not required, you can provide them as follows:
 And then replace it later in a subtheme by adding before it and then removing it:
 
 	$.themeScript(".my-class").add( function doSomethingHere( $s, $ ) {...}, "doSomething" ).remove("doSomething");
+	
+Changelog
+----------
+
+1.0.1 - 2010/01/28
+	No longer automatically executes $.themeScript.bind() when the script is loaded.  This causes problems if loading
+		asynchronously using a loader like LABjs
+	Switched to using Google Closure for minification
+
+1.0.0 - 2009/02/02
+	Initial release
