@@ -1,26 +1,30 @@
 /**
-* jQuery.themeScript - $(document).ready startup function theming
+* jQuery.themescript - $(document).ready startup function theming
 * Written by Brant Burnett (http://www.btburnett.com/).
 * Licensed under the GPL (http://www.gnu.org/licenses/gpl.html).
-* Date: 2010/01/28
+* Date: 2010/02/09
 *
 * @author Brant Burnett
-* @version 1.0.1
+* @version 1.1.0
 *
 **/
 
 For better or for worse, a significant amount of the look and feel of our web sites
 is now being controlled through Javascript.  There's simply so much we can do with
 Javascript, especially jQuery and it's plugins, that can't be done with CSS.  This
-causes a potential problem when dealing with subthemes.  Often times we want to create
-a common theme, but then allow subthemes to override certain functionality.  With CSS
-this is easy, but with Javascript it's more difficult.  That's where jQuery.themeScript
-comes in.
+presents two complications.  First, you need to apply your theming to any HTML loaded
+via AJAX.  Secondly, we sometimes want to create a common theme, but then allow
+subthemes to override certain functionality.  With CSS this is easy, but with Javascript
+it's more difficult.  That's where jQuery.themescript comes in.
 
 jQuery.themeScript allows you to register collections of functions against specific
 CSS selectors or specific names.  A subtheme can then add to or replace these functions
-via their CSS selector or name.  These functions are called during $(document).ready
-in the order that they are specified in the collection.
+via their CSS selector or name.  You can then execute all of these functions against
+the entire document during $(document).ready, or against a subset of elements using
+$(selector).themescript().  Finally, $(selector).themescript(url, [data], [callback])
+works like the jQuery load function, loading the result of an AJAX request into the
+inner HTML of the element, but additionally executes the themescripts against the
+result once it's complete.
 
 Function Collections
 ---------------------
@@ -40,7 +44,10 @@ get( [index] ) - With no parameters returns an array made from the collection.  
 				 
 each( callback, [args] ) - iterates through the collection like jQuery.each
 
-exec() - executes the functions in the collection in order
+exec( [context] ) - executes the functions in the collection in order.  Context optionally
+	supplies a context to jQuery during selectin of the elements, and is also passed to
+	the called functions as the third parameter.  Context can be a DOM element, document,
+	or a jQuery object.
 
 add( callback, [index] ) - adds a function to the collection.  index is the zero-based index to
 	insert the function before.  index can also be the name of the function to insert the callback
@@ -59,76 +66,127 @@ index( funcName ) - returns the zero-based index of a function in the collection
 Global Functions
 -----------------
 
-$.themeScript( sel ) - Retrieves a function collection based upon a selector
+$.themescript( sel ) - Retrieves a function collection based upon a selector
 
-$.themeScript.clear() - removes all theming collections
+$.themescript.clear() - removes all theming collections
 
-$.themeScript.exec() - executes all theme registered themeScript collections
+$.themescript.exec( [context] ) - executes all theme registered themescript collections,
+	with the supplied optional context.  Context can be a DOM element, document, or
+	jQuery object.
 
-$.themeScript.extend - extend the themeScript library, like $.extend
+$.themescript.extend - extend the themescript library, like $.extend
 
-$.themeScript.fn.extend - extend the themeScript collection functions, like $.fn.extend
+$.themescript.fn.extend - extend the themescript collection functions, like $.fn.extend
 
-$.themeScript.bind() - binds $.themeScript.exec to $(document).ready.
+$.themescript.bind() - binds $.themescript.exec to $(document).ready.
 
-$.themeScript.unbind() - unbinds $.themeScript.exec from $(document).ready
+$.themescript.unbind() - unbinds $.themescript.exec from $(document).ready
+
+$.fn Functions
+---------------
+
+$.fn.themescript([url], [data], [callback])
+
+	If called with no parameters, executes all theme functions against all of the elements in
+	the jQuery object.  A common usage would be to call this during an AJAX success callback
+	on all items inserted into the DOM.
+	
+		Usage:
+			$('#selector').themescript();
+		
+		Equivalent To:
+	
+			$.themescript.exec( $('#selector') );
+		
+	If called with parameters, performs a jQuery AJAX load(), and then executes all theme functions
+	against all of the elements in the jQuery object on success only.
+	
+		Usage:
+			$('#selector').themescript( 'test.php', { 'choices[]': ['Jon', 'Susan'] } );
+		
+		Equivalent To:
+			$('#selector').load( 'test.php', { 'choices[]': ['Jon', 'Susan'] }, function(responseText, res, status) {
+				if (status === "success" || status === "notmodified")
+					$.themescript.exec( this );
+			});
 
 Function Parameters
 --------------------
 
 The callback functions you add to a themeScript collection have two possible formats, depending
 on what type of selector was used to create the collection.  The second parameter is always
-the jQuery object, in case you need it to avoid namespace conflicts.
+the jQuery object, in case you need it to avoid namespace conflicts.  The third parameter is
+always the context supplied to exec(), if any.
 
 If the selector was a jQuery CSS selector, then the first parameter is a jQuery object made
 by using that selector.  Therefore, if you use:
 
-	$.themeScript(".my-class").add( function( $s, $ ) {...} );
+	$.themescript(".my-class").add( function( selector, $, context ) {...} );
 
-$s will be the result of $(".my-class").  Note that if the jQuery selector returns an empty
-jQuery object (there are no results), the callback functions are never even called.  This is
+selector will be the result of $(".my-class", context).  Note that if the jQuery selector returns
+an empty jQuery object (there are no results), the callback functions are never called.  This is
 to help improve performance.
 
 If the selector was a custom string beginning with a dash (-) character, then the first parameter
 is instead the selector string itself.  Therefore if you use:
 
-	$.themeScript("-my-theme").add( function( s, $ ) {...} );
+	$.themescript("-my-theme").add( function( str, $, context ) {...} );
 	
-s will be "-my-theme".  These functions will always be called during exec, and never skipped.
+str will be "-my-theme".  These functions will always be called during exec, and never skipped.
 
 Example Usage
 --------------
 
 In main theme, hide all DIVs with the my-class class name.
 
-	$.themeScript("div.my-class").add( function( $s ) { $s.hide(); } );
+	$.themescript("div.my-class").add( function( selector ) { selector.hide(); } );
 	
 Override in sub theme, instead setting the background color to white:
 
-	$.themeScript("div.my-class").clear().add( function ( $s ) { $s.css("background-color", "#fff"); } );
+	$.themescript("div.my-class").clear().add( function ( selector ) { selector.css("background-color", "#fff"); } );
 	
 Or insert something else before it:
 
-	$.themeScript("div.my-class").add( function( $s ) { $s.parent().appendTo("body"); }, 0);
+	$.themescript("div.my-class").add( function(selectors ) { selector.parent().appendTo("body"); }, 0);
 
 Function Naming
 ----------------
 
-You have the ability to access a function in themeScript collection by using the function's name.
+You have the ability to access a function in themescript collection by using the function's name.
 While function names are not required, you can provide them as follows:
 
-	$.themeScript(".my-class").add( [ function doSomething( $s, $ ) {...}, function doSomethingElse ( $s, $ ) {...} ] );
+	$.themescript(".my-class").add( [ function doSomething( $s, $ ) {...}, function doSomethingElse ( $s, $ ) {...} ] );
 
 And then replace it later in a subtheme by adding before it and then removing it:
 
-	$.themeScript(".my-class").add( function doSomethingHere( $s, $ ) {...}, "doSomething" ).remove("doSomething");
+	$.themescript(".my-class").add( function doSomethingHere( $s, $ ) {...}, "doSomething" ).remove("doSomething");
+
+Using With ASP.Net AJAX Update Panels
+--------------------------------------
+
+jQuery.themescript can be used with ASP.Net AJAX update panels very easily.  Just add the following script code, and
+any updated panels will automatically have the defined scripts executed against them, restricted to their context.
+
+	var prm = Sys.WebForms.PageRequestManager.getInstance();
+	prm.add_pageLoaded(function(sender, args) {
+        var updated = args.get_panelsUpdated();
+        if (updated && updated.length) {
+            $.themescript.exec($(updated));    
+        }
+    });
 	
 Changelog
 ----------
 
+1.1.0 - 2010/02/08
+	Added $.fn.themescript
+	$.exec and $.fn.exec now accept a context
+	Added $.themescript to eventually replace the harder to type $.themeScript.  Both are currently supported. though
+		$.themeScript should be considered deprecated.
+
 1.0.1 - 2010/01/28
-	No longer automatically executes $.themeScript.bind() when the script is loaded.  This causes problems if loading
-		asynchronously using a loader like LABjs
+	No longer automatically executes $.themeScript.bind() when the script is loaded.  This was causeing problems if
+		loading asynchronously using a loader like LABjs
 	Switched to using Google Closure for minification
 
 1.0.0 - 2009/02/02

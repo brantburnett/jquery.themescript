@@ -1,17 +1,23 @@
 /**
-* @license jQuery.themeScript - $(document).ready startup function theming
+* @license jQuery.themeScript - jQuery theming plugin
 * Copyright (c) 2009-2010 Brant Burnett (http://www.btburnett.com/).
 * Licensed under the GPL (http://www.gnu.org/licenses/gpl.html).
 *
-* Date:		2010/01/28
+* Date:		2010/02/09
 * Author:	Brant Burnett
-* Version:	1.0.1
+* Version:	1.1.0
 */
 
 (function($) {
-    var keys = {};
+    var keys = {}
+		UNDEF = undefined;
+		
+	function getFuncName(func) {
+        var m = func.toString().match(/^function\s+([\w\d_]+)/);
+        return m ? m[1] : "anonymous";
+    }
 
-    var ts = $.themeScript = function(key) {
+    var ts = $.themeScript = $.themescript = function(key) {
         if (!key)
             return keys;
         else if (keys[key])
@@ -37,7 +43,7 @@
         },
 
         get: function(num) {
-            return num == undefined ?
+            return num == UNDEF ?
                 $.makeArray(this) :
                 this[num];
         },
@@ -46,33 +52,41 @@
             return $.each(this, callback, args);
         },
 
-        exec: function() {
-            var $t;
-            if (this.key[0] == "-")
-                $t = this.key;
+        exec: function(context) {
+            var self = this,
+				key = self.key,
+				t;
+				
+            if (key[0] == "-") {
+                t = key;
+			}
             else
-                if (($t = $(this.key)).size() == 0) return this;
-            this.each(function() { this($t, $) });
-            return this;
+                if (!(t = $(key, context)).length) return self;
+            
+			self.each(function() { this(t, $, context) });
+			
+            return self;
         },
 
         add: function(callback, idx) {
+			var self = this;
+			
             if (callback) {
                 if (idx && typeof idx == "string") {
-                    idx = this.index(idx);
-                    if (idx < 0) idx = undefined;
+                    idx = self.index(idx);
+                    if (idx < 0) idx = UNDEF;
                 }
                 
                 var a = (typeof callback == "function") ? [callback] : callback;
-                if ((idx == undefined) || (idx >= this.length))
-                    this.push.apply(this, a);
+                if ((idx == UNDEF) || (idx >= self.length))
+                    self.push.apply(self, a);
                 else if (idx <= 0)
-                    this.setArray(a.concat(this.get()));
+                    self.setArray(a.concat(self.get()));
                 else
-                    this.setArray(this.slice(0, idx).concat(a).concat(this.slice(idx)));
+                    self.setArray(self.slice(0, idx).concat(a).concat(self.slice(idx)));
             }
 
-            return this;
+            return self;
         },
 
         push: [].push,
@@ -86,21 +100,45 @@
         },
 
         remove: function(idx, count) {
+			var self = this;
+			
             if (typeof idx == "string")
-                idx = this.index(idx);
-            if (idx >= 0 && idx < this.length)
-                this.splice(idx, count || 1);
-            return this;
+                idx =  self.index(idx);
+            if (idx >= 0 && idx <  self.length)
+                 self.splice(idx, count || 1);
+            return  self;
         },
 
         index: function(funcName) {
             for (var i = 0, l = this.length; i < l; i++)
-                if (ts.getFuncName(this[i]) == funcName)
+                if (getFuncName(this[i]) == funcName)
                 return i;
             return -1;
         }
     };
     ts.fn.init.prototype = ts.fn;
+	
+	$.fn.themescript = function(url, params, callback) {
+		if (!this.length) return this;
+		
+		if (url == UNDEF) {
+			ts.exec(this);
+		} else {
+			if (params && $.isFunction(params)) {
+				callback = params;
+				params = null;
+			}
+			
+			this.load(url, params, function(responseText, res, status) {
+				if (status === "success" || status === "notmodified")
+					ts.exec(this);
+				if (callback)
+					this.each(callback, [responseText, res, status]);
+			});
+		}
+		
+		return this;
+	}
 
     ts.extend = ts.fn.extend = $.extend;
 
@@ -114,14 +152,9 @@
         return this;
     }
 
-    ts.exec = function() {
-        ts.each(function(n, v) { v.exec(); });
+    ts.exec = function(context) {
+        ts.each(function(n, v) { v.exec(context); });
         return this;
-    }
-
-    ts.getFuncName = function(func) {
-        var m = func.toString().match(/^function\s(\w+)/);
-        return m ? m[1] : "anonymous";
     }
 
     var bound = false;
