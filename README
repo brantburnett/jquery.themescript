@@ -1,5 +1,5 @@
 /**
-* jQuery.themescript - $(document).ready startup function theming
+* jQuery.themescript - document theming helper plugin
 * Written by Brant Burnett (http://www.btburnett.com/).
 * Licensed under the GPL (http://www.gnu.org/licenses/gpl.html).
 * Date: 2010/02/09
